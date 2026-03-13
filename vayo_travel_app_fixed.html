@@ -1,0 +1,1942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>VAYO — Travel Planning</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --ink:#020202;
+  --cream:#FBF8F1;
+  --peach:#F4C79C;
+  --rust:#D45931;
+  --rust-glow:rgba(212,89,49,.35);
+  --rust-faint:rgba(212,89,49,.1);
+  --glass:rgba(251,248,241,.88);
+  --glass-dark:rgba(10,8,5,.55);
+  --border:rgba(212,89,49,.18);
+  --muted:rgba(2,2,2,.45);
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --sans:'DM Sans',sans-serif;
+  --r:26px;
+  --shadow-warm:0 20px 60px rgba(212,89,49,.2),0 4px 20px rgba(0,0,0,.12);
+  --shadow-card:0 8px 32px rgba(0,0,0,.08),0 1px 4px rgba(0,0,0,.04);
+}
+
+html,body{height:100%;overflow-x:hidden}
+body{
+  font-family:var(--sans);
+  background:#0e0b07;
+  min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;
+}
+
+/* ────── AMBIENT BG ────── */
+.ambient{
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 80% 60% at 20% 20%,rgba(212,89,49,.12) 0%,transparent 60%),
+             radial-gradient(ellipse 60% 40% at 80% 80%,rgba(244,199,156,.08) 0%,transparent 50%),
+             linear-gradient(160deg,#0e0b07 0%,#1a1007 50%,#0e0b07 100%);
+}
+
+/* ────── OUTER SHELL ────── */
+.shell{
+  position:relative;z-index:1;
+  width:100%;max-width:1100px;
+  display:flex;flex-direction:column;
+  align-items:center;
+  padding:48px 24px 80px;
+}
+
+/* ────── HEADER ────── */
+.app-header{text-align:center;margin-bottom:48px}
+.app-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(212,89,49,.15);border:1px solid rgba(212,89,49,.3);
+  border-radius:50px;padding:6px 16px;
+  font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--peach);margin-bottom:18px;
+}
+.app-logo{
+  font-family:var(--serif);font-size:clamp(3rem,6vw,5rem);
+  font-weight:700;font-style:italic;
+  background:linear-gradient(135deg,var(--cream) 0%,var(--peach) 60%,var(--rust) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  letter-spacing:-.02em;line-height:1;margin-bottom:10px;
+}
+.app-tagline{
+  font-size:13px;color:rgba(251,248,241,.35);
+  letter-spacing:.08em;font-weight:400;
+}
+
+/* ────── SCREEN SELECTOR ────── */
+.screen-nav{
+  display:flex;gap:6px;flex-wrap:wrap;justify-content:center;
+  max-width:860px;margin-bottom:48px;
+}
+.snav{
+  padding:8px 15px;
+  background:rgba(251,248,241,.05);
+  border:1px solid rgba(251,248,241,.1);
+  border-radius:50px;
+  font-family:var(--sans);font-size:11px;font-weight:500;
+  color:rgba(251,248,241,.4);cursor:pointer;
+  transition:all .25s cubic-bezier(.4,0,.2,1);
+  white-space:nowrap;letter-spacing:.02em;
+}
+.snav:hover{
+  background:rgba(212,89,49,.15);
+  border-color:rgba(212,89,49,.4);
+  color:var(--peach);
+}
+.snav.on{
+  background:linear-gradient(135deg,var(--rust),#b83d20);
+  border-color:var(--rust);
+  color:#fff;
+  box-shadow:0 4px 20px var(--rust-glow);
+}
+
+/* ────── PHONE ────── */
+.device{
+  width:390px;height:844px;
+  position:relative;
+  border-radius:56px;
+  background:#080604;
+  border:1.5px solid rgba(255,255,255,.1);
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,.8),
+    0 60px 120px rgba(0,0,0,.7),
+    0 0 80px rgba(212,89,49,.08),
+    inset 0 1px 0 rgba(255,255,255,.08);
+  overflow:hidden;flex-shrink:0;
+}
+/* Dynamic island */
+.device::before{
+  content:'';
+  position:absolute;top:12px;left:50%;transform:translateX(-50%);
+  width:90px;height:28px;border-radius:20px;
+  background:#000;z-index:500;
+  box-shadow:0 0 0 1.5px rgba(255,255,255,.06);
+}
+/* Side shine */
+.device::after{
+  content:'';
+  position:absolute;top:0;right:0;width:1.5px;height:100%;
+  background:linear-gradient(to bottom,transparent,rgba(255,255,255,.1) 30%,rgba(255,255,255,.05) 70%,transparent);
+  z-index:500;
+}
+.viewport{
+  width:100%;height:100%;
+  border-radius:54px;
+  overflow:hidden;position:relative;
+}
+
+/* ────── SCREEN ────── */
+.scr{
+  position:absolute;inset:0;
+  overflow-y:auto;overflow-x:hidden;
+  scrollbar-width:none;
+  transform:translateX(110%) scale(.96);
+  opacity:0;
+  transition:transform .5s cubic-bezier(.4,0,.2,1),opacity .5s ease;
+  will-change:transform,opacity;
+}
+.scr::-webkit-scrollbar{display:none}
+.scr.is-active{transform:translateX(0) scale(1);opacity:1}
+.scr.is-exit{transform:translateX(-30%) scale(.98);opacity:0}
+
+/* ────── STATUS BAR ────── */
+.sb{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:56px 24px 8px;
+  position:absolute;top:0;left:0;right:0;z-index:200;pointer-events:none;
+}
+.sb-time{font-size:14px;font-weight:700;color:#fff}
+.sb-icons{display:flex;align-items:center;gap:4px;font-size:12px;color:#fff}
+
+/* ────── BOTTOM NAV ────── */
+.bnav{
+  position:sticky;bottom:0;
+  background:rgba(251,248,241,.97);
+  backdrop-filter:blur(20px);
+  border-top:1px solid rgba(212,89,49,.12);
+  display:flex;align-items:center;
+  padding:12px 8px 28px;z-index:300;
+}
+.bni{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;
+  cursor:pointer;padding:2px 0;
+  transition:transform .2s;
+}
+.bni:active{transform:scale(.9)}
+.bni-icon{
+  width:28px;height:28px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;transition:all .25s;
+}
+.bni.bni-on .bni-icon{
+  background:var(--rust);
+  box-shadow:0 4px 12px var(--rust-glow);
+}
+.bni-label{font-size:9px;font-weight:600;color:#aaa;letter-spacing:.04em}
+.bni.bni-on .bni-label{color:var(--rust)}
+
+/* ────── BACK BTN ────── */
+.back{
+  width:40px;height:40px;border-radius:50%;
+  backdrop-filter:blur(16px);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .2s;flex-shrink:0;
+  font-size:18px;
+}
+.back-light{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.25);color:#fff}
+.back-dark{background:rgba(0,0,0,.06);border:1px solid rgba(0,0,0,.08);color:var(--ink)}
+.back:hover{transform:scale(1.08)}
+
+/* ════════════ S1: SPLASH ════════════ */
+#s-splash{background:var(--cream)}
+.splash-wrap{
+  min-height:100%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  background:var(--cream);position:relative;overflow:hidden;
+  padding:40px 32px;
+}
+.splash-orb{
+  position:absolute;
+  border-radius:50%;pointer-events:none;
+}
+.splash-orb-1{
+  width:340px;height:340px;
+  background:radial-gradient(circle,rgba(244,199,156,.6) 0%,rgba(212,89,49,.2) 40%,transparent 70%);
+  bottom:-80px;right:-80px;
+}
+.splash-orb-2{
+  width:200px;height:200px;
+  background:radial-gradient(circle,rgba(212,89,49,.15) 0%,transparent 70%);
+  top:-40px;left:-40px;
+}
+.splash-icon{
+  font-size:64px;
+  animation:levitate 4s ease-in-out infinite;
+  margin-bottom:24px;filter:drop-shadow(0 12px 28px rgba(212,89,49,.5));
+  position:relative;z-index:2;
+}
+@keyframes levitate{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-16px) rotate(-8deg)}}
+.splash-brand{
+  font-family:var(--serif);font-size:72px;font-weight:700;font-style:italic;
+  color:var(--ink);letter-spacing:-.03em;line-height:.9;
+  position:relative;z-index:2;margin-bottom:16px;
+}
+.splash-brand em{color:var(--rust);font-style:italic}
+.splash-sub{
+  font-size:13px;color:var(--muted);text-align:center;
+  max-width:220px;line-height:1.7;position:relative;z-index:2;
+  margin-bottom:48px;
+}
+.splash-enter{
+  position:relative;z-index:2;
+  width:100%;padding:18px;
+  background:var(--ink);color:var(--cream);
+  border:none;border-radius:18px;
+  font-family:var(--sans);font-size:15px;font-weight:600;
+  cursor:pointer;letter-spacing:.04em;
+  transition:all .3s cubic-bezier(.4,0,.2,1);
+  box-shadow:0 12px 40px rgba(0,0,0,.25);
+}
+.splash-enter:hover{background:var(--rust);box-shadow:0 12px 40px var(--rust-glow);transform:translateY(-2px)}
+
+/* ════════════ ONBOARD ════════════ */
+.ob-wrap{min-height:100%;display:flex;flex-direction:column;position:relative;background:#000}
+.ob-bg{flex:1;position:relative;overflow:hidden;min-height:460px}
+.ob-bg img{width:100%;height:100%;object-fit:cover;opacity:.9;display:block}
+.ob-bg-fade{
+  position:absolute;inset:0;
+  background:linear-gradient(to bottom,rgba(0,0,0,.2) 0%,transparent 40%,rgba(0,0,0,.5) 100%);
+}
+.ob-top{position:absolute;top:58px;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:0 20px;z-index:10}
+.ob-skip{
+  background:rgba(255,255,255,.15);
+  backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:50px;padding:7px 18px;
+  font-family:var(--sans);font-size:12px;font-weight:600;
+  color:#fff;cursor:pointer;transition:all .2s;
+}
+.ob-skip:hover{background:rgba(255,255,255,.25)}
+.ob-card{
+  background:var(--cream);
+  border-radius:32px 32px 0 0;
+  padding:28px 28px 0;
+  margin-top:-32px;position:relative;z-index:5;
+}
+.ob-prog{display:flex;gap:5px;margin-bottom:20px;justify-content:center}
+.op{height:3px;border-radius:2px;background:rgba(0,0,0,.12);transition:all .4s}
+.op.op-on{background:var(--rust);flex:2}
+.op.op-off{flex:1}
+.ob-card h2{
+  font-family:var(--serif);font-size:30px;font-weight:600;
+  color:var(--ink);line-height:1.2;margin-bottom:12px;text-align:center;
+}
+.ob-card h2 i{color:var(--rust);font-style:italic}
+.ob-card p{
+  font-size:13px;color:var(--muted);text-align:center;
+  line-height:1.75;margin-bottom:28px;
+}
+.btn-primary{
+  width:100%;padding:18px;
+  background:linear-gradient(135deg,var(--rust),#b83d20);
+  color:#fff;border:none;border-radius:18px;
+  font-family:var(--sans);font-size:15px;font-weight:600;
+  cursor:pointer;letter-spacing:.03em;
+  box-shadow:0 8px 28px var(--rust-glow);
+  transition:all .3s;
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 36px var(--rust-glow)}
+.btn-ghost{
+  width:100%;padding:17px;margin-top:10px;
+  background:transparent;color:var(--ink);
+  border:1.5px solid rgba(2,2,2,.12);border-radius:18px;
+  font-family:var(--sans);font-size:15px;font-weight:500;
+  cursor:pointer;transition:all .2s;
+}
+.btn-ghost:hover{border-color:var(--rust);color:var(--rust)}
+
+/* ════════════ JOIN ════════════ */
+#s-join{background:#000}
+.join-wrap{min-height:100%;display:flex;flex-direction:column;position:relative}
+.join-hero{flex:1;position:relative;overflow:hidden;min-height:100%}
+.join-hero img{width:100%;height:100%;object-fit:cover;display:block;min-height:844px}
+.join-hero-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to bottom,rgba(0,0,0,.25) 0%,rgba(0,0,0,.85) 100%);
+}
+.join-top{
+  position:absolute;top:58px;left:20px;z-index:5;
+}
+.join-body{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:28px 24px 0;z-index:5;
+}
+.join-headline{
+  font-family:var(--serif);font-size:38px;font-weight:600;color:#fff;
+  line-height:1.1;margin-bottom:8px;font-style:italic;
+}
+.join-sub{font-size:13px;color:rgba(255,255,255,.55);margin-bottom:28px;line-height:1.6}
+.join-cta-stack{display:flex;flex-direction:column;gap:10px}
+.join-guest{
+  text-align:center;font-size:12px;color:rgba(255,255,255,.4);
+  padding-top:14px;padding-bottom:4px;cursor:pointer;
+}
+.join-guest span{color:var(--peach);font-weight:600;border-bottom:1px solid rgba(244,199,156,.4)}
+
+/* ════════════ SIGN IN ════════════ */
+#s-signin{background:var(--cream)}
+.auth-hero{
+  height:220px;position:relative;overflow:hidden;
+  background:linear-gradient(145deg,#1a0e05,#2d1a09);
+}
+.auth-hero-pattern{
+  position:absolute;inset:0;
+  background-image:radial-gradient(circle at 30% 70%,rgba(212,89,49,.3) 0%,transparent 50%),
+                   radial-gradient(circle at 80% 20%,rgba(244,199,156,.2) 0%,transparent 40%);
+}
+.auth-logo-wrap{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding-top:24px;
+}
+.auth-logo{
+  font-family:var(--serif);font-size:48px;font-weight:700;font-style:italic;
+  background:linear-gradient(135deg,var(--cream),var(--peach));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  display:flex;align-items:center;gap:8px;
+}
+.auth-logo-icon{font-size:32px;-webkit-text-fill-color:initial}
+.auth-sub{font-size:12px;color:rgba(251,248,241,.4);letter-spacing:.08em;margin-top:4px}
+.auth-form{padding:28px 24px}
+.field-group{margin-bottom:14px}
+.field-label{
+  font-size:10px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px;display:block;
+}
+.field-wrap{
+  display:flex;align-items:center;gap:12px;
+  background:#fff;border:1.5px solid rgba(2,2,2,.1);border-radius:16px;
+  padding:15px 18px;transition:all .2s;
+}
+.field-wrap:focus-within{
+  border-color:var(--rust);
+  box-shadow:0 0 0 4px rgba(212,89,49,.08);
+}
+.field-wrap svg{opacity:.4;flex-shrink:0;transition:opacity .2s}
+.field-wrap:focus-within svg{opacity:.8}
+.field-wrap input{
+  flex:1;border:none;outline:none;
+  font-family:var(--sans);font-size:14px;color:var(--ink);background:transparent;
+}
+.field-wrap input::placeholder{color:rgba(2,2,2,.25);font-size:13px}
+.forgot{
+  text-align:right;font-size:12px;color:var(--rust);
+  font-weight:600;cursor:pointer;margin-top:-2px;margin-bottom:22px;
+}
+.divider{display:flex;align-items:center;gap:12px;margin:20px 0}
+.divider-line{flex:1;height:1px;background:rgba(2,2,2,.08)}
+.divider-text{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.04em}
+.social-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.social-btn{
+  padding:13px;border:1.5px solid rgba(2,2,2,.1);border-radius:14px;
+  background:#fff;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  font-family:var(--sans);font-size:12px;font-weight:600;color:var(--ink);
+  transition:all .2s;
+}
+.social-btn:hover{border-color:var(--rust);transform:translateY(-1px)}
+.auth-footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px;padding-bottom:20px}
+.auth-footer a{color:var(--rust);font-weight:700;cursor:pointer;border-bottom:1px solid rgba(212,89,49,.3)}
+
+/* ════════════ SIGN UP ════════════ */
+#s-signup{background:var(--cream)}
+
+/* ════════════ HOME ════════════ */
+#s-home{background:var(--cream)}
+.home-top{
+  padding:58px 22px 0;
+  background:var(--cream);
+}
+.home-row1{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.home-loc{display:flex;align-items:center;gap:6px;cursor:pointer}
+.home-loc-pin{
+  width:28px;height:28px;background:var(--rust-faint);
+  border-radius:10px;display:flex;align-items:center;justify-content:center;
+  font-size:14px;
+}
+.home-loc-text{font-size:10px;color:var(--muted)}
+.home-loc-city{font-size:13px;font-weight:700;color:var(--ink)}
+.home-av{
+  width:42px;height:42px;border-radius:50%;overflow:hidden;
+  border:2px solid rgba(212,89,49,.25);
+  background:linear-gradient(135deg,var(--peach),var(--rust));
+  display:flex;align-items:center;justify-content:center;
+}
+.home-av img{width:100%;height:100%;object-fit:cover;display:block}
+.home-greeting{
+  font-size:12px;color:var(--muted);margin-bottom:4px;
+}
+.home-title{
+  font-family:var(--serif);font-size:28px;font-weight:600;
+  color:var(--ink);line-height:1.2;margin-bottom:22px;
+}
+.home-title em{color:var(--rust);font-style:italic}
+/* search */
+.search-bar{
+  display:flex;align-items:center;gap:10px;
+  background:#fff;border:1.5px solid rgba(2,2,2,.08);
+  border-radius:18px;padding:14px 18px;
+  box-shadow:var(--shadow-card);margin-bottom:0;
+  transition:all .2s;
+}
+.search-bar:focus-within{border-color:var(--rust);box-shadow:0 0 0 4px rgba(212,89,49,.08)}
+.search-bar svg{opacity:.3;flex-shrink:0}
+.search-bar input{
+  flex:1;border:none;outline:none;
+  font-family:var(--sans);font-size:13px;color:var(--ink);background:transparent;
+}
+.search-bar input::placeholder{color:rgba(2,2,2,.3)}
+.search-filter{
+  width:32px;height:32px;background:var(--rust);border-radius:10px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  cursor:pointer;font-size:14px;
+  box-shadow:0 4px 12px var(--rust-glow);
+}
+/* stories */
+.stories{
+  display:flex;gap:16px;padding:20px 22px 0;
+  overflow-x:auto;
+}
+.stories::-webkit-scrollbar{display:none}
+.story{
+  display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;cursor:pointer;
+}
+.story-ring{
+  width:56px;height:56px;border-radius:50%;padding:2.5px;
+  background:linear-gradient(135deg,var(--rust),var(--peach));
+  transition:transform .2s;
+}
+.story:hover .story-ring{transform:scale(1.06)}
+.story-ring-in{
+  width:100%;height:100%;border-radius:50%;overflow:hidden;
+  border:2.5px solid var(--cream);
+}
+.story-ring-in img{width:100%;height:100%;object-fit:cover;display:block}
+.story-name{font-size:10px;font-weight:500;color:var(--muted)}
+/* sections */
+.sec{padding:20px 22px 0}
+.sec-hd{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:14px}
+.sec-hd h3{font-family:var(--serif);font-size:22px;font-weight:600;color:var(--ink)}
+.sec-hd a{font-size:11px;font-weight:600;color:var(--rust);cursor:pointer;letter-spacing:.04em}
+/* place cards */
+.hscroll{display:flex;gap:14px;overflow-x:auto;padding-bottom:4px;margin:0 -22px;padding-left:22px;padding-right:22px}
+.hscroll::-webkit-scrollbar{display:none}
+.pcard{
+  flex-shrink:0;width:200px;border-radius:22px;overflow:hidden;
+  background:#fff;box-shadow:var(--shadow-card);cursor:pointer;
+  transition:transform .3s cubic-bezier(.4,0,.2,1),box-shadow .3s;
+  position:relative;
+}
+.pcard:hover{transform:translateY(-6px);box-shadow:var(--shadow-warm)}
+.pcard-img{height:150px;position:relative;overflow:hidden}
+.pcard-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s}
+.pcard:hover .pcard-img img{transform:scale(1.08)}
+.pcard-badge{
+  position:absolute;top:10px;left:10px;
+  background:rgba(251,248,241,.92);backdrop-filter:blur(10px);
+  border-radius:50px;padding:4px 10px;
+  font-size:10px;font-weight:700;color:var(--ink);
+  display:flex;align-items:center;gap:4px;
+}
+.pcard-fav{
+  position:absolute;top:10px;right:10px;
+  width:30px;height:30px;border-radius:50%;
+  background:rgba(251,248,241,.9);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;cursor:pointer;
+  transition:transform .2s;
+}
+.pcard-fav:hover{transform:scale(1.15)}
+.pcard-body{padding:14px}
+.pcard-name{font-family:var(--serif);font-size:16px;font-weight:600;color:var(--ink);margin-bottom:3px}
+.pcard-loc{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:3px}
+/* transport */
+.transport-grid{
+  display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;
+  margin:0 -22px;padding-left:22px;padding-right:22px;
+}
+.transport-grid::-webkit-scrollbar{display:none}
+.tcard{
+  flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;
+  transition:transform .2s;
+}
+.tcard:hover{transform:translateY(-3px)}
+.tcard-img{
+  width:72px;height:56px;border-radius:16px;overflow:hidden;
+  box-shadow:var(--shadow-card);
+}
+.tcard-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s}
+.tcard:hover .tcard-img img{transform:scale(1.1)}
+.tcard-name{font-size:11px;font-weight:600;color:var(--ink);letter-spacing:.02em}
+/* hotel mini */
+.hotel-mini-list{
+  display:flex;gap:14px;overflow-x:auto;
+  margin:0 -22px;padding-left:22px;padding-right:22px;
+  padding-bottom:4px;
+}
+.hotel-mini-list::-webkit-scrollbar{display:none}
+.hmc{
+  flex-shrink:0;width:160px;border-radius:18px;overflow:hidden;
+  background:#fff;box-shadow:var(--shadow-card);cursor:pointer;
+  transition:transform .25s;
+}
+.hmc:hover{transform:translateY(-4px)}
+.hmc img{width:100%;height:100px;object-fit:cover;display:block;transition:transform .4s}
+.hmc:hover img{transform:scale(1.06)}
+.hmc-body{padding:10px 12px 12px}
+.hmc-name{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:2px}
+.hmc-price{font-size:12px;color:var(--rust);font-weight:700}
+
+/* ════════════ LOCATION ════════════ */
+#s-location{background:var(--cream)}
+.loc-hero{height:340px;position:relative;overflow:hidden}
+.loc-hero img{width:100%;height:100%;object-fit:cover;display:block}
+.loc-hero-grad{
+  position:absolute;inset:0;
+  background:linear-gradient(to bottom,rgba(0,0,0,.25) 0%,rgba(0,0,0,.05) 40%,rgba(0,0,0,.65) 100%);
+}
+.loc-hero-top{
+  position:absolute;top:58px;left:0;right:0;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:0 20px;z-index:2;
+}
+.loc-hero-bottom{
+  position:absolute;bottom:0;left:0;right:0;padding:0 20px 20px;z-index:2;
+}
+.loc-city-name{
+  font-family:var(--serif);font-size:34px;font-weight:700;font-style:italic;
+  color:#fff;line-height:1;margin-bottom:4px;
+}
+.loc-country{font-size:13px;color:rgba(255,255,255,.7);display:flex;align-items:center;gap:5px}
+.loc-card{
+  background:var(--cream);
+  border-radius:32px 32px 0 0;
+  padding:24px 22px;
+  margin-top:-32px;position:relative;z-index:5;
+}
+.stats-row{display:flex;gap:10px;margin-bottom:22px}
+.stat-pill{
+  flex:1;background:#fff;border-radius:16px;padding:14px 10px;text-align:center;
+  box-shadow:var(--shadow-card);
+  border:1px solid rgba(2,2,2,.04);
+}
+.stat-val{font-family:var(--serif);font-size:18px;font-weight:600;color:var(--rust)}
+.stat-lbl{font-size:9px;color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
+.tabs{display:flex;gap:0;border-bottom:1px solid rgba(2,2,2,.08);margin-bottom:20px}
+.tab{
+  flex:1;padding:11px 0;text-align:center;font-size:12px;font-weight:600;
+  color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;
+  letter-spacing:.04em;transition:all .2s;
+}
+.tab.tab-on{color:var(--rust);border-color:var(--rust)}
+.loc-desc{font-size:13px;color:var(--muted);line-height:1.75;margin-bottom:20px}
+.map-widget{
+  width:100%;height:150px;border-radius:20px;overflow:hidden;
+  background:linear-gradient(135deg,#d8e8c8,#c8d8b8);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:22px;position:relative;
+  border:1px solid rgba(0,0,0,.06);
+}
+.map-widget::after{
+  content:'';position:absolute;inset:0;border-radius:20px;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Ccircle cx='30' cy='30' r='2' fill='%23D45931' opacity='.6'/%3E%3Ccircle cx='30' cy='30' r='8' fill='none' stroke='%23D45931' stroke-width='1' opacity='.3'/%3E%3C/svg%3E") center/60px no-repeat;
+}
+.map-label{font-size:11px;font-weight:700;color:#5a7a4a;background:rgba(255,255,255,.8);padding:6px 14px;border-radius:20px;z-index:2}
+.stay-title{
+  font-family:var(--serif);font-size:20px;font-weight:600;color:var(--ink);
+  margin-bottom:14px;
+}
+.stay-scroll{display:flex;gap:12px;overflow-x:auto;padding-bottom:4px}
+.stay-scroll::-webkit-scrollbar{display:none}
+.stay-card{
+  flex-shrink:0;width:150px;border-radius:16px;overflow:hidden;
+  background:#fff;box-shadow:var(--shadow-card);cursor:pointer;
+  transition:transform .2s;
+}
+.stay-card:hover{transform:translateY(-3px)}
+.stay-card img{width:100%;height:95px;object-fit:cover;display:block}
+.stay-card-body{padding:9px 11px 11px}
+.stay-name{font-size:11px;font-weight:700;color:var(--ink)}
+.stay-price{font-size:11px;color:var(--rust);font-weight:700}
+
+/* ════════════ TRANSPORT ════════════ */
+#s-transport{background:var(--cream)}
+.tp-header{padding:58px 22px 0}
+.tp-topbar{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.tp-title{font-family:var(--serif);font-size:26px;font-weight:600;color:var(--ink)}
+.tp-search{
+  display:flex;align-items:center;gap:10px;
+  background:#fff;border:1.5px solid rgba(2,2,2,.08);border-radius:16px;
+  padding:13px 16px;margin-bottom:20px;box-shadow:var(--shadow-card);
+}
+.tp-search input{flex:1;border:none;outline:none;font-family:var(--sans);font-size:13px;background:transparent;color:var(--ink)}
+.tp-search input::placeholder{color:rgba(2,2,2,.3);font-size:13px}
+.type-row{display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;margin-bottom:26px}
+.type-row::-webkit-scrollbar{display:none}
+.ttype{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;transition:transform .2s}
+.ttype:hover{transform:translateY(-3px)}
+.ttype-img{width:80px;height:60px;border-radius:18px;overflow:hidden;box-shadow:var(--shadow-card)}
+.ttype-img img{width:100%;height:100%;object-fit:cover;display:block}
+.ttype-lbl{font-size:12px;font-weight:600;color:var(--ink)}
+.best-label{margin-bottom:4px}
+.best-label h4{font-family:var(--serif);font-size:20px;font-weight:600;color:var(--ink)}
+.best-label p{font-size:11px;color:var(--muted);margin-top:2px}
+.flight-cards{display:flex;flex-direction:column;gap:14px;padding:0 22px 20px}
+.fcard{
+  background:#fff;border-radius:22px;padding:20px;
+  box-shadow:var(--shadow-card);
+  border:1.5px solid rgba(2,2,2,.05);
+  cursor:pointer;transition:all .25s;
+}
+.fcard:hover{border-color:var(--rust);box-shadow:0 8px 32px rgba(212,89,49,.15);transform:translateY(-2px)}
+.fcard-route{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.fcard-city{font-family:var(--serif);font-size:18px;font-weight:600;color:var(--ink)}
+.fcard-path{
+  flex:1;display:flex;align-items:center;gap:6px;
+  position:relative;
+}
+.fcard-line{flex:1;height:1px;background:linear-gradient(to right,transparent,var(--rust),transparent)}
+.fcard-plane{font-size:16px;color:var(--rust)}
+.fcard-times{display:flex;justify-content:space-between;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.fcard-dates{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:14px}
+.fcard-footer{display:flex;align-items:center;justify-content:space-between}
+.fcard-airline{
+  display:flex;align-items:center;gap:7px;
+  background:rgba(2,2,2,.04);border-radius:10px;padding:6px 12px;
+}
+.fcard-airline span{font-size:11px;font-weight:700;color:var(--ink)}
+.fcard-price{font-family:var(--serif);font-size:24px;font-weight:700;color:var(--rust)}
+
+/* ════════════ PLANE ════════════ */
+#s-plane{background:var(--cream)}
+.plane-hero{height:220px;position:relative;overflow:hidden}
+.plane-hero img{width:100%;height:100%;object-fit:cover;display:block}
+.plane-hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.45) 0%,rgba(0,0,0,.25) 100%)}
+.plane-hero-top{position:absolute;top:58px;left:0;right:0;padding:0 20px;z-index:5}
+.plane-hero-body{position:absolute;bottom:18px;left:22px;z-index:5}
+.plane-hero-title{font-family:var(--serif);font-size:28px;font-weight:600;color:#fff;font-style:italic;margin-bottom:4px}
+.plane-hero-loc{font-size:12px;color:rgba(255,255,255,.65);display:flex;align-items:center;gap:4px}
+.plane-form{
+  background:var(--cream);border-radius:28px 28px 0 0;
+  margin-top:-28px;position:relative;z-index:5;padding:24px 22px;
+}
+.pform-title{font-family:var(--serif);font-size:20px;font-weight:600;color:var(--ink);margin-bottom:16px}
+.route-row{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.route-box{
+  background:#fff;border:1.5px solid rgba(2,2,2,.08);border-radius:16px;
+  padding:14px 18px;
+}
+.route-box-lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px}
+.route-box-val{font-size:15px;font-weight:700;color:var(--ink)}
+.route-box-sub{font-size:10px;color:var(--muted)}
+.form-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.form-box{background:#fff;border:1.5px solid rgba(2,2,2,.08);border-radius:14px;padding:12px 16px}
+.form-box-lbl{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px}
+.form-box select{
+  width:100%;border:none;outline:none;font-family:var(--sans);
+  font-size:13px;font-weight:700;color:var(--ink);background:transparent;
+  cursor:pointer;
+}
+
+/* ════════════ HOTEL LIST ════════════ */
+#s-hotel{background:var(--cream)}
+.hotel-header{padding:58px 22px 0}
+.hotel-header-row{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.hotel-h-title{font-family:var(--serif);font-size:26px;font-weight:600;color:var(--ink)}
+.hotel-search-field{
+  display:flex;align-items:center;gap:10px;
+  background:#fff;border:1.5px solid rgba(2,2,2,.08);border-radius:16px;
+  padding:12px 16px;margin-bottom:14px;box-shadow:var(--shadow-card);
+}
+.hotel-search-field input{flex:1;border:none;outline:none;font-family:var(--sans);font-size:13px;background:transparent;color:var(--ink)}
+.hotel-search-field input::placeholder{color:rgba(2,2,2,.3)}
+.filter-row{display:flex;gap:8px;overflow-x:auto;margin-bottom:18px}
+.filter-row::-webkit-scrollbar{display:none}
+.fchip{
+  flex-shrink:0;display:flex;align-items:center;gap:5px;
+  padding:8px 16px;border-radius:12px;
+  background:#fff;border:1.5px solid rgba(2,2,2,.08);
+  font-size:11px;font-weight:600;color:var(--ink);cursor:pointer;
+  transition:all .2s;
+}
+.fchip.fchip-on{background:var(--rust);border-color:var(--rust);color:#fff}
+.hotel-count-txt{font-size:12px;color:var(--muted);font-weight:500;margin-bottom:16px}
+.hotel-count-txt b{color:var(--ink)}
+.hotel-list{display:flex;flex-direction:column;gap:14px;padding:0 22px 16px}
+.hlcard{
+  background:#fff;border-radius:22px;overflow:hidden;
+  box-shadow:var(--shadow-card);cursor:pointer;
+  transition:transform .3s,box-shadow .3s;
+}
+.hlcard:hover{transform:translateY(-4px);box-shadow:var(--shadow-warm)}
+.hlcard-img{height:190px;overflow:hidden;position:relative}
+.hlcard-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s}
+.hlcard:hover .hlcard-img img{transform:scale(1.06)}
+.hlcard-fav{
+  position:absolute;top:14px;right:14px;
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(251,248,241,.92);backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;
+}
+.hlcard-body{padding:16px}
+.hlcard-name{font-family:var(--serif);font-size:19px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.hlcard-loc{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:3px;margin-bottom:12px}
+.hlcard-footer{display:flex;align-items:center;justify-content:space-between}
+.hlcard-stars{display:flex;gap:2px;font-size:13px}
+.hlcard-price{font-family:var(--serif);font-size:20px;font-weight:700;color:var(--rust)}
+.hlcard-price small{font-family:var(--sans);font-size:10px;color:var(--muted);font-weight:500}
+
+/* ════════════ HOTEL DETAIL ════════════ */
+#s-hdetail{background:var(--cream)}
+.hd-hero{height:300px;position:relative;overflow:hidden}
+.hd-hero img{width:100%;height:100%;object-fit:cover;display:block}
+.hd-hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.35) 0%,transparent 60%)}
+.hd-hero-top{position:absolute;top:58px;left:0;right:0;display:flex;justify-content:space-between;padding:0 20px;z-index:2}
+.hd-body{
+  background:var(--cream);border-radius:32px 32px 0 0;
+  padding:24px 22px;margin-top:-32px;position:relative;z-index:5;
+}
+.hd-rating-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.hd-stars{font-size:14px;letter-spacing:1px}
+.hd-rating-count{font-size:12px;color:var(--muted);font-weight:600}
+.hd-name{font-family:var(--serif);font-size:28px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.hd-loc{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px;margin-bottom:18px}
+.hd-desc{font-size:13px;color:var(--muted);line-height:1.75;margin-bottom:18px}
+.facilities-h{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:10px}
+.facs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.fac{
+  display:flex;align-items:center;gap:6px;
+  padding:8px 14px;background:#fff;
+  border:1px solid rgba(2,2,2,.08);border-radius:50px;
+  font-size:11px;font-weight:600;color:var(--ink);
+}
+.hd-map{
+  width:100%;height:140px;border-radius:20px;overflow:hidden;
+  background:linear-gradient(135deg,#d8e8c8,#c0d4a8);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:20px;font-size:11px;font-weight:700;color:#5a7a4a;
+}
+.reviews-h{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:14px;display:flex;justify-content:space-between}
+.reviews-h a{font-size:11px;color:var(--rust);font-weight:600;cursor:pointer}
+.review{display:flex;gap:12px;margin-bottom:16px}
+.rev-av{
+  width:42px;height:42px;border-radius:50%;overflow:hidden;flex-shrink:0;
+  background:linear-gradient(135deg,var(--peach),var(--rust));
+  display:flex;align-items:center;justify-content:center;
+}
+.rev-av img{width:100%;height:100%;object-fit:cover;display:block}
+.rev-info{flex:1}
+.rev-name{font-size:13px;font-weight:700;color:var(--ink)}
+.rev-when{font-size:10px;color:var(--muted)}
+.rev-stars{font-size:11px;margin:3px 0}
+.rev-text{font-size:12px;color:var(--muted);line-height:1.65}
+
+/* ════════════ HOTEL BOOKING ════════════ */
+#s-hbooking{background:var(--cream)}
+.hb-header{display:flex;align-items:center;gap:14px;padding:58px 22px 0}
+.hb-title{font-family:var(--serif);font-size:24px;font-weight:600;color:var(--ink)}
+.cal-wrap{padding:0 22px 20px}
+.cal-month-h{
+  font-family:var(--serif);font-size:20px;font-weight:600;color:var(--ink);
+  text-align:center;margin-bottom:18px;
+}
+.cal-wdays{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:6px}
+.cal-wday{font-size:9px;font-weight:700;color:var(--muted);text-align:center;letter-spacing:.08em}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cday{
+  aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:500;color:var(--ink);
+  border-radius:12px;cursor:pointer;transition:all .2s;
+}
+.cday:hover{background:rgba(212,89,49,.1)}
+.cday.empty{color:transparent;pointer-events:none}
+.cday.cin,.cday.cout{background:var(--rust);color:#fff;font-weight:700}
+.cday.crange{background:rgba(212,89,49,.12);color:var(--rust);font-weight:600}
+.booking-details-card{
+  background:#fff;border-radius:24px;margin:0 22px 16px;
+  padding:20px;box-shadow:var(--shadow-card);
+}
+.bd-title{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:14px}
+.bd-checkin-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.bd-field{background:rgba(2,2,2,.03);border-radius:14px;padding:12px 14px;border:1px solid rgba(2,2,2,.06)}
+.bd-field-lbl{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.bd-field-val{font-size:13px;font-weight:700;color:var(--ink)}
+.bd-nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.bd-num{background:rgba(212,89,49,.06);border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(212,89,49,.12)}
+.bd-num-lbl{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.bd-num-val{font-family:var(--serif);font-size:22px;font-weight:700;color:var(--rust)}
+.hb-footer{display:flex;gap:12px;padding:0 22px 24px;align-items:center}
+.hb-total{
+  flex:1;background:#fff;border-radius:18px;padding:14px 18px;
+  box-shadow:var(--shadow-card);border:1px solid rgba(2,2,2,.06);
+}
+.hb-total-lbl{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.hb-total-val{font-family:var(--serif);font-size:28px;font-weight:700;color:var(--rust)}
+.btn-book{
+  padding:17px 26px;
+  background:var(--ink);color:var(--cream);
+  border:none;border-radius:18px;
+  font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;
+  transition:all .25s;white-space:nowrap;letter-spacing:.04em;
+}
+.btn-book:hover{background:var(--rust);box-shadow:0 8px 24px var(--rust-glow);transform:translateY(-2px)}
+
+/* ════════════ RESTAURANT ════════════ */
+#s-rest{background:var(--cream)}
+.rest-top{padding:58px 22px 0}
+.rest-topbar{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.rest-page-title{font-family:var(--serif);font-size:26px;font-weight:600;color:var(--ink)}
+.cat-row{
+  display:flex;gap:16px;overflow-x:auto;padding-bottom:4px;margin-bottom:24px;
+  margin:0 -22px;padding-left:22px;padding-right:22px;margin-bottom:24px;
+}
+.cat-row::-webkit-scrollbar{display:none}
+.cat-item{
+  flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;
+}
+.cat-img{
+  width:68px;height:68px;border-radius:50%;overflow:hidden;
+  box-shadow:var(--shadow-card);
+  border:3px solid #fff;transition:transform .25s;
+}
+.cat-item:hover .cat-img{transform:scale(1.06)}
+.cat-img img{width:100%;height:100%;object-fit:cover;display:block}
+.cat-lbl{font-size:10px;font-weight:600;color:var(--ink)}
+.pop-in{
+  font-family:var(--serif);font-size:20px;font-weight:600;color:var(--ink);
+  margin-bottom:14px;padding:0 22px;
+}
+.rest-list{display:flex;flex-direction:column;gap:12px;padding:0 22px 20px}
+.rcard{
+  display:flex;gap:14px;background:#fff;border-radius:18px;padding:14px;
+  box-shadow:var(--shadow-card);cursor:pointer;
+  transition:all .25s;
+}
+.rcard:hover{transform:translateY(-2px);box-shadow:var(--shadow-warm)}
+.rcard-img{width:76px;height:76px;border-radius:14px;overflow:hidden;flex-shrink:0}
+.rcard-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s}
+.rcard:hover .rcard-img img{transform:scale(1.08)}
+.rcard-info{flex:1;min-width:0}
+.rcard-name{font-family:var(--serif);font-size:16px;font-weight:600;color:var(--ink);margin-bottom:2px}
+.rcard-rating{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--ink);margin-bottom:3px}
+.rcard-type{font-size:11px;color:var(--muted)}
+.rcard-loc{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:3px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rcard-more{
+  padding:8px 14px;background:var(--rust);color:#fff;
+  border:none;border-radius:10px;font-family:var(--sans);
+  font-size:11px;font-weight:700;cursor:pointer;align-self:center;flex-shrink:0;
+  transition:all .2s;
+}
+.rcard-more:hover{background:#b83d20;transform:scale(1.05)}
+
+/* ════════════ REST DETAIL ════════════ */
+#s-rdetail{background:var(--cream)}
+.rd-hero{height:260px;position:relative;overflow:hidden}
+.rd-hero img{width:100%;height:100%;object-fit:cover;display:block}
+.rd-hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.4) 0%,transparent 50%,rgba(0,0,0,.5) 100%)}
+.rd-hero-top{position:absolute;top:58px;left:0;right:0;display:flex;justify-content:space-between;padding:0 20px;z-index:2}
+.rd-body{
+  background:var(--cream);border-radius:32px 32px 0 0;
+  padding:24px 22px;margin-top:-32px;position:relative;z-index:5;
+}
+.rd-name{font-family:var(--serif);font-size:28px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.rd-rating{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.rd-type{font-size:12px;color:var(--muted);margin-bottom:14px}
+.rd-badge{
+  display:inline-flex;align-items:center;gap:7px;
+  background:rgba(212,89,49,.1);color:var(--rust);
+  padding:7px 16px;border-radius:50px;font-size:12px;font-weight:700;
+  border:1px solid rgba(212,89,49,.2);margin-bottom:18px;
+}
+.rd-desc{font-size:13px;color:var(--muted);line-height:1.75;margin-bottom:20px}
+.menu-hd{font-family:var(--serif);font-size:20px;font-weight:600;color:var(--ink);margin-bottom:14px}
+.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
+.menu-item{background:#fff;border-radius:16px;overflow:hidden;box-shadow:var(--shadow-card);cursor:pointer}
+.menu-item img{width:100%;height:100px;object-fit:cover;display:block;transition:transform .4s}
+.menu-item:hover img{transform:scale(1.06)}
+.menu-item-body{padding:10px 12px 12px}
+.menu-item-name{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:2px}
+.menu-item-price{font-size:13px;color:var(--rust);font-weight:700}
+.website-btn{
+  width:100%;padding:17px;
+  background:linear-gradient(135deg,var(--rust),#b83d20);
+  color:#fff;border:none;border-radius:18px;
+  font-family:var(--sans);font-size:14px;font-weight:600;
+  cursor:pointer;letter-spacing:.04em;
+  box-shadow:0 8px 24px var(--rust-glow);
+  transition:all .25s;
+}
+.website-btn:hover{transform:translateY(-2px);box-shadow:0 12px 32px var(--rust-glow)}
+
+/* ════════════ TRIPS ════════════ */
+#s-trips{background:var(--cream)}
+.trips-hero{height:240px;position:relative;overflow:hidden}
+.trips-hero img{width:100%;height:100%;object-fit:cover;display:block}
+.trips-hero-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to bottom,rgba(0,0,0,.45) 0%,rgba(0,0,0,.7) 100%);
+}
+.trips-hero-content{
+  position:absolute;inset:0;padding:58px 22px 24px;
+  display:flex;flex-direction:column;justify-content:flex-end;
+}
+.trips-hero-title{font-family:var(--serif);font-size:36px;font-weight:700;font-style:italic;color:#fff;margin-bottom:4px}
+.trips-hero-loc{font-size:12px;color:rgba(255,255,255,.65);display:flex;align-items:center;gap:4px}
+.trips-body{padding:22px}
+.prev-h{font-family:var(--serif);font-size:20px;font-weight:600;color:var(--ink);margin-bottom:14px}
+/* fix: renamed to trip-item to avoid conflict with transport tcard */
+.trip-item{
+  background:#fff;border-radius:20px;padding:18px;
+  box-shadow:var(--shadow-card);margin-bottom:12px;
+  border:1.5px solid rgba(2,2,2,.05);cursor:pointer;
+  transition:all .25s;
+}
+.trip-item:hover{border-color:var(--rust);box-shadow:0 8px 32px rgba(212,89,49,.12);transform:translateY(-2px)}
+.tcard-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.tcard-title{font-family:var(--serif);font-size:17px;font-weight:600;color:var(--ink)}
+.tcard-dates{font-size:10px;color:var(--muted);font-weight:500}
+.tcard-tags{display:flex;gap:7px;flex-wrap:wrap}
+.ttag{
+  display:flex;align-items:center;gap:4px;
+  padding:5px 11px;background:rgba(2,2,2,.04);border-radius:8px;
+  font-size:10px;font-weight:600;color:var(--ink);
+}
+.btn-new-trip{
+  width:100%;padding:18px;
+  background:linear-gradient(135deg,var(--rust),#b83d20);
+  color:#fff;border:none;border-radius:20px;
+  font-family:var(--sans);font-size:15px;font-weight:600;cursor:pointer;
+  box-shadow:0 10px 32px var(--rust-glow);letter-spacing:.04em;
+  transition:all .3s;margin-top:4px;
+}
+.btn-new-trip:hover{transform:translateY(-3px);box-shadow:0 14px 40px var(--rust-glow)}
+
+/* ════════════ TICKET ════════════ */
+#s-ticket{background:var(--cream)}
+.ticket-hero{height:220px;position:relative;overflow:hidden}
+.ticket-hero img{width:100%;height:100%;object-fit:cover;display:block}
+.ticket-hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.5) 0%,rgba(0,0,0,.35) 100%)}
+.ticket-hero-top{position:absolute;top:58px;left:0;right:0;padding:0 20px;z-index:5}
+.ticket-form{
+  background:var(--cream);border-radius:28px 28px 0 0;
+  margin-top:-28px;position:relative;z-index:5;padding:24px 22px;
+}
+.ticket-total-band{
+  background:linear-gradient(135deg,var(--ink),#2a2015);
+  border-radius:20px;padding:20px;
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:16px;
+}
+.ttb-label{font-size:11px;font-weight:600;color:rgba(251,248,241,.5);letter-spacing:.08em;margin-bottom:4px}
+.ttb-price{font-family:var(--serif);font-size:36px;font-weight:700;color:var(--cream)}
+.ttb-icon{font-size:40px;opacity:.6}
+
+/* ────── META FOOTER ────── */
+.meta-footer{
+  margin-top:44px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:700px;
+}
+.meta-chip{
+  background:rgba(251,248,241,.05);border:1px solid rgba(251,248,241,.08);
+  border-radius:50px;padding:6px 14px;
+  font-size:10px;color:rgba(251,248,241,.3);font-family:var(--sans);letter-spacing:.04em;
+}
+.meta-chip.highlight{
+  background:rgba(212,89,49,.15);border-color:rgba(212,89,49,.3);
+  color:var(--peach);font-weight:700;
+}
+
+/* ════════════ IMAGE FALLBACK PLACEHOLDERS ════════════ */
+img{background:linear-gradient(135deg,#e8e0d4,#d4c8b8)}
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+
+<div class="shell">
+  <!-- HEADER -->
+  <div class="app-header">
+    <div class="app-eyebrow">✈ UI · UX Case Study · Travel Planning App</div>
+    <div class="app-logo">Vayo</div>
+    <div class="app-tagline">Discover the world, one journey at a time</div>
+  </div>
+
+  <!-- SCREEN NAV -->
+  <div class="screen-nav">
+    <button class="snav on" onclick="go('splash',this)">Splash</button>
+    <button class="snav" onclick="go('ob1',this)">Onboarding 1</button>
+    <button class="snav" onclick="go('ob2',this)">Onboarding 2</button>
+    <button class="snav" onclick="go('ob3',this)">Onboarding 3</button>
+    <button class="snav" onclick="go('join',this)">Join Now</button>
+    <button class="snav" onclick="go('signin',this)">Sign In</button>
+    <button class="snav" onclick="go('signup',this)">Sign Up</button>
+    <button class="snav" onclick="go('home',this)">Home</button>
+    <button class="snav" onclick="go('location',this)">Location</button>
+    <button class="snav" onclick="go('transport',this)">Transport</button>
+    <button class="snav" onclick="go('plane',this)">Plane</button>
+    <button class="snav" onclick="go('hotel',this)">Hotels</button>
+    <button class="snav" onclick="go('hdetail',this)">Hotel Detail</button>
+    <button class="snav" onclick="go('hbooking',this)">Hotel Booking</button>
+    <button class="snav" onclick="go('rest',this)">Restaurant</button>
+    <button class="snav" onclick="go('rdetail',this)">Rest. Detail</button>
+    <button class="snav" onclick="go('trips',this)">Trips</button>
+    <button class="snav" onclick="go('ticket',this)">Ticket</button>
+  </div>
+
+  <!-- DEVICE -->
+  <div class="device">
+    <div class="viewport">
+
+      <!-- ═══ SPLASH ═══ -->
+      <div class="scr is-active" id="s-splash">
+        <div class="splash-wrap">
+          <div class="splash-orb splash-orb-1"></div>
+          <div class="splash-orb splash-orb-2"></div>
+          <div class="splash-icon">✈️</div>
+          <div class="splash-brand">V<em>ayo</em></div>
+          <p class="splash-sub">Plan your journey. Discover destinations. Share your adventures.</p>
+          <button class="splash-enter" onclick="go('ob1',null)">Get Started</button>
+        </div>
+      </div>
+
+      <!-- ═══ ONBOARDING 1 ═══ -->
+      <div class="scr" id="s-ob1">
+        <div class="ob-wrap">
+          <div class="ob-bg">
+            <img src="/assets/pexels-andiravsanjani-974266.jpg" alt="Parisian cafe street" loading="lazy"/>
+            <div class="ob-bg-fade"></div>
+            <div class="ob-top">
+              <div class="back back-light" onclick="go('splash',null)">‹</div>
+              <button class="ob-skip" onclick="go('join',null)">Skip</button>
+            </div>
+          </div>
+          <div class="ob-card">
+            <div class="ob-prog">
+              <div class="op op-on"></div><div class="op op-off"></div><div class="op op-off"></div>
+            </div>
+            <h2><i>Plan</i> Your Own Journey</h2>
+            <p>Discover new destinations, create personalized itineraries, and make every trip unforgettable with our intelligent travel planner.</p>
+            <button class="btn-primary" onclick="go('ob2',null)">Continue</button>
+            <div style="height:32px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ ONBOARDING 2 ═══ -->
+      <div class="scr" id="s-ob2">
+        <div class="ob-wrap">
+          <div class="ob-bg">
+            <img src="https://images.unsplash.com/photo-1533105079780-92b9be482077?w=500&q=85" alt="Travelers sharing experience" loading="lazy"/>
+            <div class="ob-bg-fade"></div>
+            <div class="ob-top">
+              <div class="back back-light" onclick="go('ob1',null)">‹</div>
+              <button class="ob-skip" onclick="go('join',null)">Skip</button>
+            </div>
+          </div>
+          <div class="ob-card">
+            <div class="ob-prog">
+              <div class="op op-off"></div><div class="op op-on"></div><div class="op op-off"></div>
+            </div>
+            <h2><i>Share</i> an Experience</h2>
+            <p>Create stories about your travel adventures and stay connected with the most vibrant travel community in the world.</p>
+            <button class="btn-primary" onclick="go('ob3',null)">Continue</button>
+            <div style="height:32px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ ONBOARDING 3 ═══ -->
+      <div class="scr" id="s-ob3">
+        <div class="ob-wrap">
+          <div class="ob-bg">
+            <img src="/assets/pexels-m-venter-792254-1659438.jpg" alt="World map travel" loading="lazy"/>
+            <div class="ob-bg-fade"></div>
+            <div class="ob-top">
+              <div class="back back-light" onclick="go('ob2',null)">‹</div>
+              <button class="ob-skip" onclick="go('join',null)">Skip</button>
+            </div>
+          </div>
+          <div class="ob-card">
+            <div class="ob-prog">
+              <div class="op op-off"></div><div class="op op-off"></div><div class="op op-on"></div>
+            </div>
+            <h2>World is <i>Waiting</i> for You</h2>
+            <p>Yes exactly! Get hold of your passport and begin your greatest adventure. The whole world is your playground.</p>
+            <button class="btn-primary" onclick="go('join',null)">Let's Get Started</button>
+            <div style="height:32px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ JOIN ═══ -->
+      <div class="scr" id="s-join">
+        <div class="join-wrap">
+          <div class="join-hero">
+            <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=500&q=85" alt="Mountain landscape" loading="lazy"/>
+            <div class="join-hero-overlay"></div>
+            <div class="join-top">
+              <div class="back back-light" onclick="go('ob3',null)">‹</div>
+            </div>
+            <div class="join-body">
+              <div class="join-headline">Explore the world,<br/>never easy — until now.</div>
+              <p class="join-sub">Your next adventure is just a tap away. Join millions of travelers worldwide.</p>
+              <div class="join-cta-stack">
+                <button class="btn-primary" onclick="go('signup',null)">Sign up</button>
+                <button class="btn-ghost" style="color:rgba(255,255,255,.8);border-color:rgba(255,255,255,.25)" onclick="go('signin',null)">Sign in</button>
+              </div>
+              <p class="join-guest">Wants to join as a <span onclick="go('home',null)">guest?</span></p>
+              <div style="height:8px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SIGN IN ═══ -->
+      <div class="scr" id="s-signin">
+        <div style="background:var(--cream);min-height:100%">
+          <div class="auth-hero">
+            <div class="auth-hero-pattern"></div>
+            <div class="auth-logo-wrap">
+              <div style="position:absolute;top:14px;left:16px">
+                <div class="back back-light" onclick="go('join',null)">‹</div>
+              </div>
+              <div class="auth-logo"><span class="auth-logo-icon">✈️</span> Vayo</div>
+              <div class="auth-sub">SIGN IN TO YOUR ACCOUNT</div>
+            </div>
+          </div>
+          <div class="auth-form">
+            <div class="field-group">
+              <label class="field-label">Username</label>
+              <div class="field-wrap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <input type="text" placeholder="Enter your username"/>
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Password</label>
+              <div class="field-wrap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <input type="password" placeholder="Enter your password"/>
+                <span style="font-size:16px;cursor:pointer;opacity:.4">👁</span>
+              </div>
+            </div>
+            <div class="forgot">Forget Password?</div>
+            <button class="btn-primary" onclick="go('home',null)">Sign In</button>
+            <div class="divider">
+              <div class="divider-line"></div><span class="divider-text">OR CONTINUE WITH</span><div class="divider-line"></div>
+            </div>
+            <div class="social-btns">
+              <div class="social-btn">
+                <svg viewBox="0 0 24 24" width="17" height="17"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                Google
+              </div>
+              <div class="social-btn">
+                <svg viewBox="0 0 24 24" width="17" height="17"><path fill="#1877F2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                Facebook
+              </div>
+            </div>
+            <p class="auth-footer">Don't have an account? <a onclick="go('signup',null)">Sign Up</a></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SIGN UP ═══ -->
+      <div class="scr" id="s-signup">
+        <div style="background:var(--cream);min-height:100%">
+          <div class="auth-hero">
+            <div class="auth-hero-pattern"></div>
+            <div class="auth-logo-wrap">
+              <div style="position:absolute;top:14px;left:16px">
+                <div class="back back-light" onclick="go('join',null)">‹</div>
+              </div>
+              <div style="text-align:center">
+                <div style="font-family:var(--serif);font-size:32px;font-weight:700;font-style:italic;background:linear-gradient(135deg,var(--cream),var(--peach));-webkit-background-clip:text;-webkit-text-fill-color:transparent">Create Account</div>
+                <div class="auth-sub">START YOUR JOURNEY TODAY</div>
+              </div>
+            </div>
+          </div>
+          <div class="auth-form">
+            <div class="field-group">
+              <label class="field-label">First Name</label>
+              <div class="field-wrap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <input type="text" placeholder="First Name"/>
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Last Name</label>
+              <div class="field-wrap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <input type="text" placeholder="Last Name"/>
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Email</label>
+              <div class="field-wrap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                <input type="email" placeholder="Email address"/>
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Password</label>
+              <div class="field-wrap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <input type="password" placeholder="Create password"/>
+              </div>
+            </div>
+            <div class="field-group" style="margin-bottom:22px">
+              <label class="field-label">Confirm Password</label>
+              <div class="field-wrap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <input type="password" placeholder="Confirm password"/>
+              </div>
+            </div>
+            <button class="btn-primary" onclick="go('home',null)">Create Account</button>
+            <p class="auth-footer" style="padding-bottom:24px">Already have an account? <a onclick="go('signin',null)">Sign In</a></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ HOME ═══ -->
+      <div class="scr" id="s-home">
+        <div style="background:var(--cream);min-height:100%">
+          <div class="home-top">
+            <div class="home-row1">
+              <div class="home-loc">
+                <div class="home-loc-pin">📍</div>
+                <div>
+                  <div class="home-loc-text">Your location</div>
+                  <div class="home-loc-city">Bastille, Paris</div>
+                </div>
+              </div>
+              <div class="home-av">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80" alt="User avatar" loading="lazy"/>
+              </div>
+            </div>
+            <div class="home-greeting">Hello, ABC 👋</div>
+            <div class="home-title">Explore <em>Beautiful</em><br/>World!</div>
+            <div class="search-bar">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input type="text" placeholder="Where do you want to go?"/>
+              <div class="search-filter">🎚</div>
+            </div>
+          </div>
+          <!-- stories -->
+          <div class="stories">
+            <div class="story"><div class="story-ring"><div class="story-ring-in"><img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&q=70" alt="Anna" loading="lazy"/></div></div><span class="story-name">Anna</span></div>
+            <div class="story"><div class="story-ring"><div class="story-ring-in"><img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&q=70" alt="Mark" loading="lazy"/></div></div><span class="story-name">Mark</span></div>
+            <div class="story"><div class="story-ring"><div class="story-ring-in"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=70" alt="Sara" loading="lazy"/></div></div><span class="story-name">Sara</span></div>
+            <div class="story"><div class="story-ring"><div class="story-ring-in"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=70" alt="Tom" loading="lazy"/></div></div><span class="story-name">Tom</span></div>
+            <div class="story"><div class="story-ring"><div class="story-ring-in"><img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=80&q=70" alt="Lily" loading="lazy"/></div></div><span class="story-name">Lily</span></div>
+            <div class="story"><div class="story-ring"><div class="story-ring-in"><img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=80&q=70" alt="Jake" loading="lazy"/></div></div><span class="story-name">Jake</span></div>
+          </div>
+          <!-- places -->
+          <div class="sec">
+            <div class="sec-hd"><h3>Places for You</h3><a onclick="go('location',null)">More →</a></div>
+          </div>
+          <div class="hscroll">
+            <div class="pcard" onclick="go('location',null)">
+              <div class="pcard-img"><img src="https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=300&q=80" alt="Paris" loading="lazy"/><div class="pcard-badge">⭐ 4.5</div><div class="pcard-fav">🔖</div></div>
+              <div class="pcard-body"><div class="pcard-name">Bastille</div><div class="pcard-loc">📍 Paris, France</div></div>
+            </div>
+            <div class="pcard" onclick="go('location',null)">
+              <div class="pcard-img"><img src="https://images.unsplash.com/photo-1555993539-1732b0258235?w=300&q=80" alt="Santorini" loading="lazy"/><div class="pcard-badge">⭐ 4.9</div><div class="pcard-fav">🔖</div></div>
+              <div class="pcard-body"><div class="pcard-name">Santorini</div><div class="pcard-loc">📍 Greece</div></div>
+            </div>
+            <div class="pcard" onclick="go('location',null)">
+              <div class="pcard-img"><img src="https://images.unsplash.com/photo-1530841377377-3ff06c0ca713?w=300&q=80" alt="Barcelona" loading="lazy"/><div class="pcard-badge">⭐ 4.8</div><div class="pcard-fav">🔖</div></div>
+              <div class="pcard-body"><div class="pcard-name">Barcelona</div><div class="pcard-loc">📍 Spain</div></div>
+            </div>
+            <div class="pcard" onclick="go('location',null)">
+              <div class="pcard-img"><img src="https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=300&q=80" alt="Dubai" loading="lazy"/><div class="pcard-badge">⭐ 4.7</div><div class="pcard-fav">🔖</div></div>
+              <div class="pcard-body"><div class="pcard-name">Dubai</div><div class="pcard-loc">📍 UAE</div></div>
+            </div>
+          </div>
+          <!-- transport -->
+          <div class="sec" style="margin-top:6px">
+            <div class="sec-hd"><h3>Transport</h3><a onclick="go('transport',null)">More →</a></div>
+          </div>
+          <div class="transport-grid">
+            <div class="tcard" onclick="go('plane',null)"><div class="tcard-img"><img src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=120&q=70" alt="Flight" loading="lazy"/></div><span class="tcard-name">Flight</span></div>
+            <div class="tcard"><div class="tcard-img"><img src="https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=120&q=70" alt="Cruise" loading="lazy"/></div><span class="tcard-name">Cruise</span></div>
+            <div class="tcard"><div class="tcard-img"><img src="https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=120&q=70" alt="Train" loading="lazy"/></div><span class="tcard-name">Train</span></div>
+            <div class="tcard"><div class="tcard-img"><img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=120&q=70" alt="Bus" loading="lazy"/></div><span class="tcard-name">Bus</span></div>
+          </div>
+          <!-- hotels -->
+          <div class="sec" style="margin-top:6px">
+            <div class="sec-hd"><h3>Hotels</h3><a onclick="go('hotel',null)">More →</a></div>
+          </div>
+          <div class="hotel-mini-list">
+            <div class="hmc" onclick="go('hdetail',null)"><img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200&q=70" alt="Ritz Paris" loading="lazy"/><div class="hmc-body"><div class="hmc-name">Ritz Paris</div><div class="hmc-price">$130/day</div></div></div>
+            <div class="hmc" onclick="go('hdetail',null)"><img src="https://images.unsplash.com/photo-1582719508461-905c673771fd?w=200&q=70" alt="Four Seasons" loading="lazy"/><div class="hmc-body"><div class="hmc-name">Four Seasons</div><div class="hmc-price">$220/day</div></div></div>
+            <div class="hmc" onclick="go('hdetail',null)"><img src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=200&q=70" alt="Grand Bastille" loading="lazy"/><div class="hmc-body"><div class="hmc-name">Grand Bastille</div><div class="hmc-price">$185/day</div></div></div>
+            <div class="hmc" onclick="go('hdetail',null)"><img src="https://images.unsplash.com/photo-1445019980597-93fa8acb246c?w=200&q=70" alt="Le Marais" loading="lazy"/><div class="hmc-body"><div class="hmc-name">Le Marais</div><div class="hmc-price">$98/day</div></div></div>
+          </div>
+          <div style="height:16px"></div>
+          <div class="bnav">
+            <div class="bni bni-on"><div class="bni-icon">🧳</div><span class="bni-label">TRIP</span></div>
+            <div class="bni"><div class="bni-icon">♡</div><span class="bni-label">FAV</span></div>
+            <div class="bni" onclick="go('hbooking',null)"><div class="bni-icon">📅</div><span class="bni-label">BOOK</span></div>
+            <div class="bni" onclick="go('rest',null)"><div class="bni-icon">📍</div><span class="bni-label">NEARBY</span></div>
+            <div class="bni"><div class="bni-icon">👤</div><span class="bni-label">PROFILE</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ LOCATION ═══ -->
+      <div class="scr" id="s-location">
+        <div style="background:var(--cream);min-height:100%">
+          <div class="loc-hero">
+            <img src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=500&q=85" alt="Paris Bastille" loading="lazy"/>
+            <div class="loc-hero-grad"></div>
+            <div class="loc-hero-top">
+              <div class="back back-light" onclick="go('home',null)">‹</div>
+              <div class="back back-light" style="font-size:16px">🔖</div>
+            </div>
+            <div class="loc-hero-bottom">
+              <div class="loc-city-name">Bastille</div>
+              <div class="loc-country">📍 Paris, France · Europe</div>
+            </div>
+          </div>
+          <div class="loc-card">
+            <div class="stats-row">
+              <div class="stat-pill"><div class="stat-val">388</div><div class="stat-lbl">Reviews</div></div>
+              <div class="stat-pill"><div class="stat-val">⭐ 4.0</div><div class="stat-lbl">Rating</div></div>
+              <div class="stat-pill"><div class="stat-val">🌡 19°</div><div class="stat-lbl">Temp</div></div>
+            </div>
+            <div class="tabs">
+              <div class="tab tab-on" onclick="tabSwitch(this)">Overview</div>
+              <div class="tab" onclick="tabSwitch(this)">Map</div>
+              <div class="tab" onclick="tabSwitch(this)">Reviews</div>
+            </div>
+            <p class="loc-desc">Bastille has been one of Paris's most iconic neighbourhoods since the French Revolution. Today, it's a vibrant district known for its lively nightlife, charming cafés, and cultural heritage that draws millions of visitors every year.</p>
+            <div class="map-widget"><div class="map-label">📍 Bastille, Paris</div></div>
+            <div class="stay-title">Where to Stay</div>
+            <div class="stay-scroll">
+              <div class="stay-card" onclick="go('hdetail',null)"><img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200&q=70" alt="Ritz Paris" loading="lazy"/><div class="stay-card-body"><div class="stay-name">Ritz Paris</div><div class="stay-price">$130/day</div></div></div>
+              <div class="stay-card" onclick="go('hdetail',null)"><img src="https://images.unsplash.com/photo-1495365200479-c4ed1d35e1aa?w=200&q=70" alt="Le Marais" loading="lazy"/><div class="stay-card-body"><div class="stay-name">Le Marais</div><div class="stay-price">$98/day</div></div></div>
+              <div class="stay-card" onclick="go('hdetail',null)"><img src="https://images.unsplash.com/photo-1444201983204-c43cbd584d93?w=200&q=70" alt="Bastille Loft" loading="lazy"/><div class="stay-card-body"><div class="stay-name">Bastille Loft</div><div class="stay-price">$75/day</div></div></div>
+              <div class="stay-card" onclick="go('hdetail',null)"><img src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=200&q=70" alt="Grand Hotel" loading="lazy"/><div class="stay-card-body"><div class="stay-name">Grand Hotel</div><div class="stay-price">$185/day</div></div></div>
+            </div>
+          </div>
+          <div class="bnav">
+            <div class="bni bni-on"><div class="bni-icon">🧳</div><span class="bni-label">TRIP</span></div>
+            <div class="bni"><div class="bni-icon">♡</div><span class="bni-label">FAV</span></div>
+            <div class="bni"><div class="bni-icon">📅</div><span class="bni-label">BOOK</span></div>
+            <div class="bni"><div class="bni-icon">📍</div><span class="bni-label">NEARBY</span></div>
+            <div class="bni"><div class="bni-icon">👤</div><span class="bni-label">PROFILE</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ TRANSPORT ═══ -->
+      <div class="scr" id="s-transport">
+        <div style="background:var(--cream);min-height:100%">
+          <div class="tp-header">
+            <div class="tp-topbar">
+              <div class="back back-dark" onclick="go('home',null)">‹</div>
+              <div class="tp-title">Transport</div>
+            </div>
+            <div class="tp-search">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input type="text" placeholder="Search Flights, Trains, etc."/>
+            </div>
+            <div class="type-row">
+              <div class="ttype" onclick="go('plane',null)"><div class="ttype-img"><img src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=120&q=70" alt="Plan" loading="lazy"/></div><span class="ttype-lbl">Plan</span></div>
+              <div class="ttype"><div class="ttype-img"><img src="https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=120&q=70" alt="Cruise" loading="lazy"/></div><span class="ttype-lbl">Cruise</span></div>
+              <div class="ttype"><div class="ttype-img"><img src="https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=120&q=70" alt="Train" loading="lazy"/></div><span class="ttype-lbl">Train</span></div>
+              <div class="ttype"><div class="ttype-img"><img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=120&q=70" alt="Bus" loading="lazy"/></div><span class="ttype-lbl">Bus</span></div>
+            </div>
+            <div class="best-label" style="padding:0 22px 14px">
+              <h4>Best Prices for You</h4>
+              <p>On this week</p>
+            </div>
+          </div>
+          <div class="flight-cards">
+            <div class="fcard" onclick="go('plane',null)">
+              <div class="fcard-route">
+                <span class="fcard-city">Canada</span>
+                <div class="fcard-path"><div class="fcard-line"></div><span class="fcard-plane">✈</span></div>
+                <span class="fcard-city">Paris</span>
+              </div>
+              <div class="fcard-times"><span>6:00 pm</span><span style="font-size:11px;color:var(--muted)">10h 45m</span><span>7:45 pm</span></div>
+              <div class="fcard-dates"><span>12 Apr 2024</span><span>12 Apr 2024</span></div>
+              <div class="fcard-footer">
+                <div class="fcard-airline"><span style="font-size:18px">✈️</span><span>TravelCo</span></div>
+                <div class="fcard-price">$100</div>
+              </div>
+            </div>
+            <div class="fcard" onclick="go('plane',null)">
+              <div class="fcard-route">
+                <span class="fcard-city">Canada</span>
+                <div class="fcard-path"><div class="fcard-line"></div><span class="fcard-plane">✈</span></div>
+                <span class="fcard-city">Paris</span>
+              </div>
+              <div class="fcard-times"><span>6:00 pm</span><span style="font-size:11px;color:var(--muted)">5h 45m</span><span>7:45 pm</span></div>
+              <div class="fcard-dates"><span>12 Apr 2024</span><span>12 Apr 2024</span></div>
+              <div class="fcard-footer">
+                <div class="fcard-airline"><span style="font-size:18px">🛫</span><span>Air France</span></div>
+                <div class="fcard-price">$180</div>
+              </div>
+            </div>
+            <div class="fcard" onclick="go('plane',null)">
+              <div class="fcard-route">
+                <span class="fcard-city">London</span>
+                <div class="fcard-path"><div class="fcard-line"></div><span class="fcard-plane">✈</span></div>
+                <span class="fcard-city">Paris</span>
+              </div>
+              <div class="fcard-times"><span>9:15 am</span><span style="font-size:11px;color:var(--muted)">1h 15m</span><span>10:30 am</span></div>
+              <div class="fcard-dates"><span>15 Apr 2024</span><span>15 Apr 2024</span></div>
+              <div class="fcard-footer">
+                <div class="fcard-airline"><span style="font-size:18px">🛩</span><span>EasyJet</span></div>
+                <div class="fcard-price">$65</div>
+              </div>
+            </div>
+          </div>
+          <div class="bnav">
+            <div class="bni bni-on"><div class="bni-icon">🧳</div><span class="bni-label">TRIP</span></div>
+            <div class="bni"><div class="bni-icon">♡</div><span class="bni-label">FAV</span></div>
+            <div class="bni"><div class="bni-icon">📅</div><span class="bni-label">BOOK</span></div>
+            <div class="bni"><div class="bni-icon">📍</div><span class="bni-label">NEARBY</span></div>
+            <div class="bni"><div class="bni-icon">👤</div><span class="bni-label">PROFILE</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ PLANE ═══ -->
+      <div class="scr" id="s-plane">
+        <div style="background:var(--cream);min-height:100%">
+          <div class="plane-hero">
+            <img src="https://images.unsplash.com/photo-1540962351504-03099e0a754b?w=500&q=85" alt="Airplane in flight" loading="lazy"/>
+            <div class="plane-hero-overlay"></div>
+            <div class="plane-hero-top">
+              <div class="back back-light" onclick="go('transport',null)">‹</div>
+            </div>
+            <div class="plane-hero-body">
+              <div class="plane-hero-title">Trip to Paris ✈️</div>
+              <div class="plane-hero-loc">📍 Bastille, Paris</div>
+            </div>
+          </div>
+          <div class="plane-form">
+            <div class="pform-title">Find Tickets</div>
+            <div class="route-row">
+              <div class="route-box"><div class="route-box-lbl">Where from</div><div class="route-box-val">Canada</div><div class="route-box-sub">Toronto Pearson International Airport</div></div>
+              <div class="route-box"><div class="route-box-lbl">Where to</div><div class="route-box-val">Paris</div><div class="route-box-sub">Charles de Gaulle Airport</div></div>
+            </div>
+            <div class="form-2col">
+              <div class="form-box"><div class="form-box-lbl">Departure</div><select><option>July 4, 2024</option></select></div>
+              <div class="form-box"><div class="form-box-lbl">Return</div><select><option>Select date</option></select></div>
+            </div>
+            <div class="form-2col">
+              <div class="form-box"><div class="form-box-lbl">Person</div><select><option>👥 2</option><option>👤 1</option><option>👥 3+</option></select></div>
+              <div class="form-box"><div class="form-box-lbl">Infants</div><select><option>👶 0</option><option>👶 1</option><option>👶 2</option></select></div>
+            </div>
+            <div class="route-box" style="margin-bottom:20px">
+              <div class="route-box-lbl">Budget Range</div>
+              <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-top:8px">
+                <input type="text" value="$1,000" style="border:1.5px solid rgba(2,2,2,.1);border-radius:10px;padding:9px 12px;font-family:var(--sans);font-size:13px;font-weight:600;color:var(--ink);outline:none;background:#fff"/>
+                <span style="font-size:11px;color:var(--muted);font-weight:700">TO</span>
+                <input type="text" value="$22,550" style="border:1.5px solid rgba(2,2,2,.1);border-radius:10px;padding:9px 12px;font-family:var(--sans);font-size:13px;font-weight:600;color:var(--ink);outline:none;background:#fff"/>
+              </div>
+            </div>
+            <button class="btn-primary" onclick="go('ticket',null)">Find Tickets</button>
+          </div>
+          <div class="bnav">
+            <div class="bni bni-on"><div class="bni-icon">🧳</div><span class="bni-label">TRIP</span></div>
+            <div class="bni"><div class="bni-icon">♡</div><span class="bni-label">FAV</span></div>
+            <div class="bni"><div class="bni-icon">📅</div><span class="bni-label">BOOK</span></div>
+            <div class="bni"><div class="bni-icon">📍</div><span class="bni-label">NEARBY</span></div>
+            <div class="bni"><div class="bni-icon">👤</div><span class="bni-label">PROFILE</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ HOTEL LIST ═══ -->
+      <div class="scr" id="s-hotel">
+        <div style="background:var(--cream);min-height:100%">
+          <div class="hotel-header">
+            <div class="hotel-header-row">
+              <div class="back back-dark" onclick="go('home',null)">‹</div>
+              <div class="hotel-h-title">Hotel</div>
+            </div>
+            <div class="hotel-search-field">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <input type="text" placeholder="Hotel Near: Bastille"/>
+            </div>
+            <div class="filter-row">
+              <div class="fchip fchip-on">⇅ Sort</div>
+              <div class="fchip">▼ Filters</div>
+              <div class="fchip">🗺 Map</div>
+              <div class="fchip">⭐ Rating</div>
+              <div class="fchip">💰 Price</div>
+            </div>
+            <p class="hotel-count-txt" style="padding:0 22px"><b>34 hotels</b> in Bastille</p>
+          </div>
+          <div class="hotel-list">
+            <div class="hlcard" onclick="go('hdetail',null)">
+              <div class="hlcard-img"><img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=500&q=80" alt="Ritz Paris" loading="lazy"/><div class="hlcard-fav">🔖</div></div>
+              <div class="hlcard-body">
+                <div class="hlcard-name">Ritz Paris</div>
+                <div class="hlcard-loc">📍 Bastille Paris</div>
+                <div class="hlcard-footer"><div class="hlcard-stars">⭐⭐⭐⭐⭐</div><div class="hlcard-price">$130 <small>/day</small></div></div>
+              </div>
+            </div>
+            <div class="hlcard" onclick="go('hdetail',null)">
+              <div class="hlcard-img"><img src="https://images.unsplash.com/photo-1582719508461-905c673771fd?w=500&q=80" alt="Four Seasons" loading="lazy"/><div class="hlcard-fav">🔖</div></div>
+              <div class="hlcard-body">
+                <div class="hlcard-name">Four Seasons Hotel</div>
+                <div class="hlcard-loc">📍 Paris</div>
+                <div class="hlcard-footer"><div class="hlcard-stars">⭐⭐⭐⭐</div><div class="hlcard-price">$220 <small>/day</small></div></div>
+              </div>
+            </div>
+            <div class="hlcard" onclick="go('hdetail',null)">
+              <div class="hlcard-img"><img src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=500&q=80" alt="Grand Bastille" loading="lazy"/><div class="hlcard-fav">🔖</div></div>
+              <div class="hlcard-body">
+                <div class="hlcard-name">Grand Bastille Hotel</div>
+                <div class="hlcard-loc">📍 Bastille, Paris</div>
+                <div class="hlcard-footer"><div class="hlcard-stars">⭐⭐⭐⭐⭐</div><div class="hlcard-price">$185 <small>/day</small></div></div>
+              </div>
+            </div>
+            <div class="hlcard" onclick="go('hdetail',null)">
+              <div class="hlcard-img"><img src="https://images.unsplash.com/photo-1445019980597-93fa8acb246c?w=500&q=80" alt="Le Marais" loading="lazy"/><div class="hlcard-fav">🔖</div></div>
+              <div class="hlcard-body">
+                <div class="hlcard-name">Le Marais Hotel</div>
+                <div class="hlcard-loc">📍 Le Marais, Paris</div>
+                <div class="hlcard-footer"><div class="hlcard-stars">⭐⭐⭐⭐</div><div class="hlcard-price">$98 <small>/day</small></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="bnav">
+            <div class="bni"><div class="bni-icon">🧳</div><span class="bni-label">TRIP</span></div>
+            <div class="bni bni-on"><div class="bni-icon">♡</div><span class="bni-label">FAV</span></div>
+            <div class="bni"><div class="bni-icon">📅</div><span class="bni-label">BOOK</span></div>
+            <div class="bni"><div class="bni-icon">📍</div><span class="bni-label">NEARBY</span></div>
+            <div class="bni"><div class="bni-icon">👤</div><span class="bni-label">PROFILE</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ HOTEL DETAIL ═══ -->
+      <div class="scr" id="s-hdetail">
+        <div style="background:var(--cream);min-height:100%">
+          <div class="hd-hero">
+            <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=500&q=85" alt="Ritz Paris" loading="lazy"/>
+            <div class="hd-hero-overlay"></div>
+            <div class="hd-hero-top">
+              <div class="back back-light" onclick="go('hotel',null)">‹</div>
+              <div class="back back-light" style="font-size:16px">🔖</div>
+            </div>
+          </div>
+          <div class="hd-body">
+            <div class="hd-rating-row"><span class="hd-stars">⭐⭐⭐⭐⭐</span><span class="hd-rating-count">4.0 · 103 Reviews</span></div>
+            <div class="hd-name">Ritz Paris</div>
+            <div class="hd-loc">📍 Bastille Paris</div>
+            <p class="hd-desc">The Ritz Paris has been the world's leading luxury hotel since 1898. Located on the prestigious Place Vendôme, it offers an unparalleled experience that combines French elegance with impeccable service and modern comfort.</p>
+            <div class="facilities-h">Facilities</div>
+            <div class="facs">
+              <div class="fac">❄️ AC</div>
+              <div class="fac">📶 Wi-Fi</div>
+              <div class="fac">🍳 Breakfast</div>
+              <div class="fac">🏊 Pool</div>
+              <div class="fac">🅿️ Parking</div>
+              <div class="fac">🏋️ Gym</div>
+            </div>
+            <div class="hd-map">📍 Bastille, Paris · 8th Arrondissement</div>
+            <div class="reviews-h">Reviews <a>See all</a></div>
+            <div class="review">
+              <div class="rev-av">
+                <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=70" alt="Jenny Edward" loading="lazy"/>
+              </div>
+              <div class="rev-info">
+                <div class="rev-name">Jenny Edward</div>
+                <div class="rev-when">1 day ago</div>
+                <div class="rev-stars">⭐⭐⭐⭐ 4.0</div>
+                <p class="rev-text">Absolutely stunning hotel. The service is impeccable and the rooms are beautifully appointed. Would definitely return for another stay.</p>
+              </div>
+            </div>
+            <div class="review">
+              <div class="rev-av">
+                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=70" alt="Marcus Lee" loading="lazy"/>
+              </div>
+              <div class="rev-info">
+                <div class="rev-name">Marcus Lee</div>
+                <div class="rev-when">3 days ago</div>
+                <div class="rev-stars">⭐⭐⭐⭐⭐ 5.0</div>
+                <p class="rev-text">Best hotel in Paris, hands down. The breakfast is divine and the location is perfect for exploring the city.</p>
+              </div>
+            </div>
+          </div>
+          <div style="padding:0 22px 12px">
+            <button class="btn-primary" onclick="go('hbooking',null)">Book a Room</button>
+          </div>
+          <div class="bnav">
+            <div class="bni"><div class="bni-icon">🧳</div><span class="bni-label">TRIP</span></div>
+            <div class="bni"><div class="bni-icon">♡</div><span class="bni-label">FAV</span></div>
+            <div class="bni bni-on"><div class="bni-icon">📅</div><span class="bni-label">BOOK</span></div>
+            <div class="bni"><div class="bni-icon">📍</div><span class="bni-label">NEARBY</span></div>
+            <div class="bni"><div class="bni-icon">👤</div><span class="bni-label">PROFILE</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ HOTEL BOOKING ═══ -->
+      <div class="scr" id="s-hbooking">
+        <div style="background:var(--cream);min-height:100%">
+          <div class="hb-header">
+            <div class="back back-dark" onclick="go('hdetail',null)">‹</div>
+            <div class="hb-title">Select Dates</div>
+          </div>
+          <div class="cal-wrap">
+            <div class="cal-month-h">July 2024</div>
+            <div class="cal-wdays">
+              <div class="cal-wday">SUN</div><div class="cal-wday">MON</div><div class="cal-wday">TUE</div>
+              <div class="cal-wday">WED</div><div class="cal-wday">THU</div><div class="cal-wday">FRI</div><div class="cal-wday">SAT</div>
+            </div>
+            <div class="cal-grid" id="calGrid"></div>
+          </div>
+          <div class="booking-details-card">
+            <div class="bd-title">Booking Details</div>
+            <div class="bd-checkin-row">
+              <div class="bd-field"><div class="bd-field-lbl">📅 Check In</div><div class="bd-field-val">13 July, 2024</div></div>
+              <div class="bd-field"><div class="bd-field-lbl">📅 Check Out</div><div class="bd-field-val">18 July, 2024</div></div>
+            </div>
+            <div class="bd-nums">
+              <div class="bd-num"><div class="bd-num-lbl">Room</div><div class="bd-num-val">1</div></div>
+              <div class="bd-num"><div class="bd-num-lbl">Adult</div><div class="bd-num-val">2</div></div>
+              <div class="bd-num"><div class="bd-num-lbl">Days</div><div class="bd-num-val">5</div></div>
+            </div>
+          </div>
+          <div class="hb-footer">
+            <div class="hb-total"><div class="hb-total-lbl">TOTAL</div><div class="hb-total-val">$650</div></div>
+            <button class="btn-book" onclick="go('trips',null)">Book a Room</button>
+          </div>
+          <div class="bnav">
+            <div class="bni"><div class="bni-icon">🧳</div><span class="bni-label">TRIP</span></div>
+            <div class="bni"><div class="bni-icon">♡</div><span class="bni-label">FAV</span></div>
+            <div class="bni bni-on"><div class="bni-icon">📅</div><span class="bni-label">BOOK</span></div>
+            <div class="bni"><div class="bni-icon">📍</div><span class="bni-label">NEARBY</span></div>
+            <div class="bni"><div class="bni-icon">👤</div><span class="bni-label">PROFILE</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ RESTAURANT ═══ -->
+      <div class="scr" id="s-rest">
+        <div style="background:var(--cream);min-height:100%">
+          <div class="rest-top">
+            <div class="rest-topbar">
+              <div class="back back-dark" onclick="go('home',null)">‹</div>
+              <div class="rest-page-title">Restaurants</div>
+            </div>
+            <div class="cat-row">
+              <div class="cat-item"><div class="cat-img"><img src="https://images.unsplash.com/photo-1547592166-23ac45744acd?w=100&q=70" alt="Soup" loading="lazy"/></div><span class="cat-lbl">Soup</span></div>
+              <div class="cat-item"><div class="cat-img"><img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=100&q=70" alt="National" loading="lazy"/></div><span class="cat-lbl">National</span></div>
+              <div class="cat-item"><div class="cat-img"><img src="https://images.unsplash.com/photo-1551024506-0bccd828d307?w=100&q=70" alt="Dessert" loading="lazy"/></div><span class="cat-lbl">Dessert</span></div>
+              <div class="cat-item"><div class="cat-img"><img src="https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=100&q=70" alt="Vegetable" loading="lazy"/></div><span class="cat-lbl">Vegetables</span></div>
+              <div class="cat-item"><div class="cat-img"><img src="https://images.unsplash.com/photo-1565299507177-b0ac66763828?w=100&q=70" alt="Grill" loading="lazy"/></div><span class="cat-lbl">Grill</span></div>
+            </div>
+          </div>
+          <div class="pop-in">Popular in Paris</div>
+          <div class="rest-list">
+            <div class="rcard" onclick="go('rdetail',null)">
+              <div class="rcard-img"><img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=150&q=70" alt="Passionne" loading="lazy"/></div>
+              <div class="rcard-info"><div class="rcard-name">Passionne</div><div class="rcard-rating">⭐ 4.0</div><div class="rcard-type">Cafe · Family Restaurant</div><div class="rcard-loc">📍 17, Rue Bergère, 75009 Paris</div></div>
+              <button class="rcard-more" onclick="event.stopPropagation();go('rdetail',null)">More</button>
+            </div>
+            <div class="rcard" onclick="go('rdetail',null)">
+              <div class="rcard-img"><img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=150&q=70" alt="Bistronomic" loading="lazy"/></div>
+              <div class="rcard-info"><div class="rcard-name">Bistronomic</div><div class="rcard-rating">⭐ 4.5</div><div class="rcard-type">Fine Dining</div><div class="rcard-loc">📍 34, Rue Beaurepaire, 75010 Paris</div></div>
+              <button class="rcard-more" onclick="event.stopPropagation();go('rdetail',null)">More</button>
+            </div>
+            <div class="rcard" onclick="go('rdetail',null)">
+              <div class="rcard-img"><img src="https://images.unsplash.com/photo-1528605248644-14dd04022da1?w=150&q=70" alt="Shiro" loading="lazy"/></div>
+              <div class="rcard-info"><div class="rcard-name">Shiro</div><div class="rcard-rating">⭐ 4.0</div><div class="rcard-type">Cafe · Family Restaurant</div><div class="rcard-loc">📍 17, Rue Bergère, 75009 Paris</div></div>
+              <button class="rcard-more" onclick="event.stopPropagation();go('rdetail',null)">More</button>
+            </div>
+            <div class="rcard" onclick="go('rdetail',null)">
+              <div class="rcard-img"><img src="https://images.unsplash.com/photo-1561347981-969c80b8e944?w=150&q=70" alt="Bouillon" loading="lazy"/></div>
+              <div class="rcard-info"><div class="rcard-name">Bouillon Chartier</div><div class="rcard-rating">⭐ 4.0</div><div class="rcard-type">Brasserie · French</div><div class="rcard-loc">📍 7, Rue du Fbg. Montmartre, 75009 Paris</div></div>
+              <button class="rcard-more" onclick="event.stopPropagation();go('rdetail',null)">More</button>
+            </div>
+            <div class="rcard" onclick="go('rdetail',null)">
+              <div class="rcard-img"><img src="https://images.unsplash.com/photo-1600891964092-4316c288032e?w=150&q=70" alt="Closerie" loading="lazy"/></div>
+              <div class="rcard-info"><div class="rcard-name">Closerie Des Lilas</div><div class="rcard-rating">⭐ 4.3</div><div class="rcard-type">Brasserie · Bar</div><div class="rcard-loc">📍 171, Blvd du Montparnasse, 75006 Paris</div></div>
+              <button class="rcard-more" onclick="event.stopPropagation();go('rdetail',null)">More</button>
+            </div>
+          </div>
+          <div class="bnav">
+            <div class="bni"><div class="bni-icon">🧳</div><span class="bni-label">TRIP</span></div>
+            <div class="bni"><div class="bni-icon">♡</div><span class="bni-label">FAV</span></div>
+            <div class="bni"><div class="bni-icon">📅</div><span class="bni-label">BOOK</span></div>
+            <div class="bni bni-on"><div class="bni-icon">📍</div><span class="bni-label">NEARBY</span></div>
+            <div class="bni"><div class="bni-icon">👤</div><span class="bni-label">PROFILE</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ RESTAURANT DETAIL ═══ -->
+      <div class="scr" id="s-rdetail">
+        <div style="background:var(--cream);min-height:100%">
+          <div class="rd-hero">
+            <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&q=85" alt="Passionne restaurant" loading="lazy"/>
+            <div class="rd-hero-overlay"></div>
+            <div class="rd-hero-top">
+              <div class="back back-light" onclick="go('rest',null)">‹</div>
+              <div class="back back-light" style="font-size:16px">🔖</div>
+            </div>
+          </div>
+          <div class="rd-body">
+            <div class="rd-name">Passionne</div>
+            <div class="rd-rating"><span style="font-size:14px">⭐⭐⭐⭐</span><span style="font-size:12px;color:var(--muted);font-weight:600">4.0 · 432 Reviews</span></div>
+            <div class="rd-type">Cafe · Family Restaurant</div>
+            <div class="rd-badge">🕐 Opening Hours: 10 Am – 24 Pm</div>
+            <p class="rd-desc">Passionne is a beloved Parisian bistro known for its warm atmosphere, exceptional French cuisine, and dedication to locally-sourced ingredients. Each dish is a celebration of tradition and modern gastronomy.</p>
+            <div class="menu-hd">Menu</div>
+            <div class="menu-grid">
+              <div class="menu-item"><img src="https://images.unsplash.com/photo-1547592166-23ac45744acd?w=200&q=70" alt="Soupe du Jour" loading="lazy"/><div class="menu-item-body"><div class="menu-item-name">Soupe du Jour</div><div class="menu-item-price">$12</div></div></div>
+              <div class="menu-item"><img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=200&q=70" alt="National Food" loading="lazy"/><div class="menu-item-body"><div class="menu-item-name">National Food</div><div class="menu-item-price">$24</div></div></div>
+              <div class="menu-item"><img src="https://images.unsplash.com/photo-1551024506-0bccd828d307?w=200&q=70" alt="Crème Brûlée" loading="lazy"/><div class="menu-item-body"><div class="menu-item-name">Crème Brûlée</div><div class="menu-item-price">$9</div></div></div>
+              <div class="menu-item"><img src="https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=200&q=70" alt="Salade Verte" loading="lazy"/><div class="menu-item-body"><div class="menu-item-name">Salade Verte</div><div class="menu-item-price">$14</div></div></div>
+            </div>
+            <button class="website-btn">Go to the Website →</button>
+          </div>
+          <div class="bnav">
+            <div class="bni"><div class="bni-icon">🧳</div><span class="bni-label">TRIP</span></div>
+            <div class="bni"><div class="bni-icon">♡</div><span class="bni-label">FAV</span></div>
+            <div class="bni"><div class="bni-icon">📅</div><span class="bni-label">BOOK</span></div>
+            <div class="bni bni-on"><div class="bni-icon">📍</div><span class="bni-label">NEARBY</span></div>
+            <div class="bni"><div class="bni-icon">👤</div><span class="bni-label">PROFILE</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ TRIPS ═══ -->
+      <div class="scr" id="s-trips">
+        <div style="background:var(--cream);min-height:100%">
+          <div class="trips-hero">
+            <img src="https://images.unsplash.com/photo-1501555088652-021faa106b9b?w=500&q=85" alt="Travel trips" loading="lazy"/>
+            <div class="trips-hero-overlay"></div>
+            <div class="trips-hero-content">
+              <div style="position:absolute;top:0;left:0;right:0;display:flex;padding:0 20px;padding-top:58px">
+                <div class="back back-light" onclick="go('home',null)">‹</div>
+              </div>
+              <div class="trips-hero-title">My Trips</div>
+              <div class="trips-hero-loc">📍 Bastille Paris</div>
+            </div>
+          </div>
+          <div class="trips-body">
+            <div class="prev-h">Previous Trips</div>
+            <div class="trip-item">
+              <div class="tcard-header"><span class="tcard-title">Trip to France</span><span class="tcard-dates">France · Havana</span></div>
+              <div class="tcard-tags"><span class="ttag">💰 $200</span><span class="ttag">📅 7 Days</span><span class="ttag">🏠 Home</span><span class="ttag">📍 3 km</span></div>
+            </div>
+            <div class="trip-item">
+              <div class="tcard-header"><span class="tcard-title">Trip to United States</span><span class="tcard-dates">Canada · United States</span></div>
+              <div class="tcard-tags"><span class="ttag">💰 $550</span><span class="ttag">📅 10 Days</span><span class="ttag">🏠 Home</span><span class="ttag">⏱ 7 pm</span></div>
+            </div>
+            <div class="trip-item">
+              <div class="tcard-header"><span class="tcard-title">Trip to Greece</span><span class="tcard-dates">Athens · Santorini</span></div>
+              <div class="tcard-tags"><span class="ttag">💰 $380</span><span class="ttag">📅 5 Days</span><span class="ttag">🏨 Hotel</span><span class="ttag">📍 2 km</span></div>
+            </div>
+            <button class="btn-new-trip" onclick="go('ticket',null)">Plan a New Trip</button>
+          </div>
+          <div class="bnav">
+            <div class="bni bni-on"><div class="bni-icon">🧳</div><span class="bni-label">TRIP</span></div>
+            <div class="bni"><div class="bni-icon">♡</div><span class="bni-label">FAV</span></div>
+            <div class="bni"><div class="bni-icon">📅</div><span class="bni-label">BOOK</span></div>
+            <div class="bni"><div class="bni-icon">📍</div><span class="bni-label">NEARBY</span></div>
+            <div class="bni"><div class="bni-icon">👤</div><span class="bni-label">PROFILE</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ TICKET ═══ -->
+      <div class="scr" id="s-ticket">
+        <div style="background:var(--cream);min-height:100%">
+          <div class="ticket-hero">
+            <img src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=500&q=85" alt="Airplane wing" loading="lazy"/>
+            <div class="ticket-hero-overlay"></div>
+            <div class="ticket-hero-top">
+              <div class="back back-light" onclick="go('trips',null)">‹</div>
+            </div>
+            <div style="position:absolute;bottom:20px;left:22px;z-index:5">
+              <div class="plane-hero-title">Trip to Paris ✈️</div>
+              <div class="plane-hero-loc">📍 Bastille, Paris</div>
+            </div>
+          </div>
+          <div class="ticket-form">
+            <div class="pform-title">Tickets</div>
+            <div class="route-row">
+              <div class="route-box"><div class="route-box-lbl">Where from</div><div class="route-box-val">Canada</div><div class="route-box-sub">Toronto Pearson International Airport</div></div>
+              <div class="route-box"><div class="route-box-lbl">Where to</div><div class="route-box-val">Paris</div><div class="route-box-sub">Charles de Gaulle Airport</div></div>
+            </div>
+            <div class="form-2col">
+              <div class="form-box"><div class="form-box-lbl">Departure</div><select><option>July 4, 2024</option></select></div>
+              <div class="form-box"><div class="form-box-lbl">Return</div><select><option>Select</option></select></div>
+            </div>
+            <div class="form-2col" style="margin-bottom:20px">
+              <div class="form-box"><div class="form-box-lbl">Person</div><select><option>👥 2</option></select></div>
+              <div class="form-box"><div class="form-box-lbl">Infants</div><select><option>👶 0</option></select></div>
+            </div>
+            <div class="ticket-total-band">
+              <div><div class="ttb-label">TOTAL COST</div><div class="ttb-price">$1,000</div></div>
+              <div class="ttb-icon">🎫</div>
+            </div>
+            <button class="btn-primary">Book Now</button>
+          </div>
+          <div class="bnav">
+            <div class="bni bni-on"><div class="bni-icon">🧳</div><span class="bni-label">TRIP</span></div>
+            <div class="bni"><div class="bni-icon">♡</div><span class="bni-label">FAV</span></div>
+            <div class="bni"><div class="bni-icon">📅</div><span class="bni-label">BOOK</span></div>
+            <div class="bni"><div class="bni-icon">📍</div><span class="bni-label">NEARBY</span></div>
+            <div class="bni"><div class="bni-icon">👤</div><span class="bni-label">PROFILE</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /viewport -->
+  </div><!-- /device -->
+
+  <!-- META -->
+  <div class="meta-footer">
+    <span class="meta-chip highlight">✈ VAYO Travel App</span>
+    <span class="meta-chip">18 Screens</span>
+    <span class="meta-chip">Cormorant Garamond + DM Sans</span>
+    <span class="meta-chip">Luxury Editorial Aesthetic</span>
+    <span class="meta-chip">Pure HTML · CSS · JS</span>
+    <span class="meta-chip">Image-Complete · Alignment-Fixed</span>
+  </div>
+</div>
+
+<script>
+let cur = 'splash';
+
+function go(id, btn) {
+  if (id === cur) return;
+  const from = document.getElementById('s-' + cur);
+  const to = document.getElementById('s-' + id);
+  if (!from || !to) return;
+
+  from.classList.remove('is-active');
+  from.classList.add('is-exit');
+  to.classList.add('is-active');
+  to.scrollTop = 0;
+
+  setTimeout(() => from.classList.remove('is-exit'), 520);
+  cur = id;
+
+  // nav sync
+  document.querySelectorAll('.snav').forEach(b => b.classList.remove('on'));
+  if (btn) {
+    btn.classList.add('on');
+  } else {
+    const map = {splash:0,ob1:1,ob2:2,ob3:3,join:4,signin:5,signup:6,home:7,location:8,transport:9,plane:10,hotel:11,hdetail:12,hbooking:13,rest:14,rdetail:15,trips:16,ticket:17};
+    const idx = map[id];
+    const btns = document.querySelectorAll('.snav');
+    if (idx !== undefined && btns[idx]) btns[idx].classList.add('on');
+  }
+}
+
+// Tab interaction
+function tabSwitch(el) {
+  el.closest('.tabs').querySelectorAll('.tab').forEach(t => t.classList.remove('tab-on'));
+  el.classList.add('tab-on');
+}
+
+// Filter chip interaction
+document.addEventListener('click', e => {
+  const chip = e.target.closest('.fchip');
+  if (chip) {
+    chip.closest('.filter-row')?.querySelectorAll('.fchip').forEach(c => c.classList.remove('fchip-on'));
+    chip.classList.add('fchip-on');
+  }
+});
+
+// Build calendar — July 2024 starts on Monday (offset=1)
+(function buildCal() {
+  const grid = document.getElementById('calGrid');
+  if (!grid) return;
+  const offset = 1; // July 2024 starts on Monday
+  const days = 31;
+  const cin = 13, cout = 18;
+
+  for (let i = 0; i < offset; i++) {
+    const d = document.createElement('div');
+    d.className = 'cday empty';
+    d.textContent = '';
+    grid.appendChild(d);
+  }
+  for (let d = 1; d <= days; d++) {
+    const el = document.createElement('div');
+    el.className = 'cday';
+    if (d === cin) el.classList.add('cin');
+    else if (d === cout) el.classList.add('cout');
+    else if (d > cin && d < cout) el.classList.add('crange');
+    el.textContent = d;
+    el.addEventListener('click', function() {
+      grid.querySelectorAll('.cday').forEach(x => x.classList.remove('cin'));
+      this.classList.add('cin');
+    });
+    grid.appendChild(el);
+  }
+})();
+</script>
+</body>
+</html>
